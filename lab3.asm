@@ -241,7 +241,7 @@ print_number_ans proc near
         push ax
         mov dx, 0
         mov ax, bx
-        div CS:ten  
+        div ten  
         mov bx, ax
         pop ax
 
@@ -309,7 +309,7 @@ Input proc near
         jne backspace_checked
         mov dx, 0                   
         mov ax, cx                 
-        div CS:ten                  
+        div ten                  
         mov cx, ax
         putchar ' '                     
         putchar 8                       
@@ -333,7 +333,7 @@ Input proc near
     ok_digit:
         push ax
         mov ax, cx
-        mul CS:ten                  
+        mul ten                  
         mov cx, ax
         pop ax
 
@@ -350,7 +350,7 @@ Input proc near
         jmp next_digit
 
     set_minus:
-        mov CS:make_minus, 1
+        mov make_minus, 1
         jmp next_digit
 
     too_big2:
@@ -359,7 +359,7 @@ Input proc near
             
     too_big:
         mov ax, cx
-        div CS:ten  
+        div ten  
         mov cx, ax
         putchar 8       
         putchar ' '     
@@ -367,7 +367,7 @@ Input proc near
         jmp next_digit 
         
     stop_input:
-        cmp CS:make_minus, 0
+        cmp make_minus, 0
         je not_minus
         cmp cx, 32768
         ja over
