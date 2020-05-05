@@ -367,12 +367,16 @@ Input proc near
         jmp next_digit 
         
     stop_input:
-        cmp cx, 32767         
-        ja over     
         cmp CS:make_minus, 0
         je not_minus
-        neg CX
-        jmp not_minus
+        cmp cx, 32768
+        ja over
+        neg cx
+        jmp quit_input
+    not_minus:    
+        cmp cx, 32767         
+        ja over     
+        jmp quit_input
    
     over:     
         lea dx, error1
@@ -381,7 +385,7 @@ Input proc near
         xor cx, cx
         jmp next_digit    
         
-    not_minus:
+    quit_input:
         pop si
         pop ax
         pop dx
