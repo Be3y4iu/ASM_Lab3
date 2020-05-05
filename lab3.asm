@@ -1,7 +1,7 @@
 .model tiny
 .code
  
-putc macro char
+putchar macro char
     push    ax
     mov     al, char
     mov     ah, 0Eh
@@ -14,19 +14,19 @@ org 100h
 jmp start
 
 overflow db  0Dh,0Ah,"Overflow$"
-message1 db  0Dh,0Ah, "enter first number: $"
-message2 db 0Dh,0Ah, "enter second number: $"
-message3 db 0Dh,0Ah, "plus: $" 
-message4 db 0Dh,0Ah, "minus: $"
-message5 db 0Dh,0Ah, "mul: $"
-message6 db 0Dh,0Ah, "div: $"
-message7 db 0Dh,0Ah, "and: $"
-message8 db 0Dh,0Ah, "or: $"
-message9 db 0Dh,0Ah, "xor: $"
-message10 db 0Dh,0Ah, "not1: $"
-message11 db 0Dh,0Ah, "not2: $"
-error1 db  0Dh,0Ah,"invalid number$"
-error2 db  0Dh,0Ah,"division by zero is incorrect!$"
+message1 db  0Dh,0Ah, "Enter first number: $"
+message2 db 0Dh,0Ah, "Enter second number: $"
+message3 db 0Dh,0Ah, "Plus: $" 
+message4 db 0Dh,0Ah, "Minus: $"
+message5 db 0Dh,0Ah, "Mul: $"
+message6 db 0Dh,0Ah, "Div: $"
+message7 db 0Dh,0Ah, "And: $"
+message8 db 0Dh,0Ah, "Or: $"
+message9 db 0Dh,0Ah, "Xor: $"
+message10 db 0Dh,0Ah, "Not1: $"
+message11 db 0Dh,0Ah, "Not2: $"
+error1 db  0Dh,0Ah,"Invalid number. Please, try again.  $"
+error2 db  0Dh,0Ah,"Division by zero is incorrect!$"
 
 number1 dw ?
 number2 dw ? 
@@ -42,7 +42,7 @@ print_number_plus proc near
     cmp ax, 0
     jnz not_zero
 
-    putc '0'
+    putchar '0'
     jmp printed
 
     not_zero:
@@ -81,7 +81,7 @@ print_number_plus proc near
         pop ax 
         makenegoutpop:
         neg ax
-        putc '-'
+        putchar '-'
         jmp positive
                        
     positive:
@@ -99,7 +99,7 @@ print_number_minus proc near
     cmp ax, 0
     jnz not_zeromin
 
-    putc '0'
+    putchar '0'
     jmp printed
 
     not_zeromin:  
@@ -135,7 +135,7 @@ print_number_minus proc near
         pop ax
         makejustnegmin:
         neg ax
-        putc    '-'
+        putchar '-'
         jmp positivemin 
                   
     positivemin:
@@ -154,7 +154,7 @@ print_number_mul proc near
     cmp ax, 0
     jnz not_zeromul
 
-    putc '0'
+    putchar '0'
     jmp printed
 
     not_zeromul:
@@ -167,12 +167,11 @@ print_number_mul proc near
         jmp positivemul 
         
         makemulneg: 
-        putc    '-'    
+        putchar '-'    
     positivemul:
         pop ax
         call print_number_ans
     printedmul:
-        call return_neg_numbers       
         pop ax
         pop dx
         ret
@@ -185,7 +184,7 @@ print_number_div proc near
     cmp ax, 0
     jnz not_zerodiv
 
-    putc '0'
+    putchar '0'
     jmp printed
 
     not_zerodiv:
@@ -198,14 +197,13 @@ print_number_div proc near
         jmp positivediv 
         
     makedivneg: 
-        putc '-'
+        putchar '-'
              
     positivediv:
         pop ax
         call print_number_ans 
         
     printeddiv:
-        call return_neg_numbers
         pop ax
         pop dx
         ret
@@ -236,7 +234,7 @@ print_number_ans proc near
         mov dx, 0
         div bx       
         add al, 30h    
-        putc al
+        putchar al
         mov ax, dx  
 
     skip:
@@ -250,7 +248,7 @@ print_number_ans proc near
         jmp begin_print
         
     print_zero:
-        putc '0'
+        putchar '0'
         
     end_print:
         pop dx
@@ -263,7 +261,7 @@ print_number_ans endp
 check_minus proc near
     cmp ax,32767
     jna exit_check
-    putc '-'
+    putchar '-'
     neg ax
     exit_check:
         ret
@@ -313,8 +311,8 @@ Input proc near
         mov ax, cx                 
         div CS:ten                  
         mov cx, ax
-        putc ' '                     
-        putc 8                       
+        putchar ' '                     
+        putchar 8                       
         jmp next_digit
         
     backspace_checked:
@@ -327,9 +325,9 @@ Input proc near
         jbe ok_digit
         
     remove_not_digit:       
-        putc 8       
-        putc ' '     
-        putc 8            
+        putchar 8       
+        putchar ' '     
+        putchar 8            
         jmp next_digit
                
     ok_digit:
@@ -363,9 +361,9 @@ Input proc near
         mov ax, cx
         div CS:ten  
         mov cx, ax
-        putc 8       
-        putc ' '     
-        putc 8             
+        putchar 8       
+        putchar ' '     
+        putchar 8             
         jmp next_digit 
         
     stop_input:
@@ -449,7 +447,7 @@ checkflags endp
         lea dx, message6
         mov ah, 09h      
         int 21h
-        jmp divv
+        jmp diiv
         
     continue4:
         lea dx, message7
@@ -537,13 +535,15 @@ checkflags endp
         lea dx, overflow
         mov ah, 09h   
         int 21h
+        call return_neg_numbers
         jmp continue3 
 
     printmul:
-        call print_number_mul    
+        call print_number_mul
+        call return_neg_numbers    
         jmp continue3
 
-    divv: 
+    diiv: 
         cmp flag_minus_1,1
         je makenumber1posdiv
         jmp checknumber2div 
@@ -571,9 +571,11 @@ checkflags endp
         lea dx, error2
         mov ah, 09h   
         int 21h
+        call return_neg_numbers 
         jmp continue4  
 
     printdiv:
-        call print_number_div 
+        call print_number_div
+        call return_neg_numbers  
         jmp continue4
 end start   
