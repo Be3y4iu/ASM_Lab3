@@ -1,351 +1,578 @@
-.model small 
-.stack 100h 
-.data 
-message1 db "enter the first number: ",'$' 
-message2 db "enter the second number: ",'$'
-message3 db "sum: ",'$'
-message4 db "dif: ",'$'
-message5 db "mul: ",'$'
-message6 db "div: ",'$'
-message7 db "and: ",'$'
-message8 db "or: ",'$'
-message9 db "xor: ",'$'
-message10 db "not: ",'$'
-error_msg db "invalid number! ", '$'
-overflow_msg db "overflow occured! ", '$'
-div_by_zero db "division by zero is illegal! ", '$'
-try_again db "try again: ", '$'
-string db 7, 7 dup('$')
-string_end = $ - 1 
+.model tiny
+.code
+ 
+putc macro char
+    push    ax
+    mov     al, char
+    mov     ah, 0Eh
+    int     10h     
+    pop     ax
+endm
+
+org 100h 
+
+jmp start
+
+overflow db  0Dh,0Ah,"Overflow$"
+msg1 db  0Dh,0Ah, "enter first number: $"
+msg2 db 0Dh,0Ah, "enter second number: $"
+msg3 db 0Dh,0Ah, "plus: $" 
+msg4 db 0Dh,0Ah, "minus: $"
+msg5 db 0Dh,0Ah, "mul: $"
+msg6 db 0Dh,0Ah, "div: $"
+msg7 db 0Dh,0Ah, "and: $"
+msg8 db 0Dh,0Ah, "or: $"
+msg9 db 0Dh,0Ah, "xor: $"
+msg10 db 0Dh,0Ah, "not1: $"
+msg11 db 0Dh,0Ah, "not2: $"
+err1 db  0Dh,0Ah,"invalid number$"
+err2 db  0Dh,0Ah,"division by zero is incorrect!$"
+
 num1 dw ?
-num2 dw ?
-minus dw 0
-NumBuffer dw 0
+num2 dw ? 
+ten dw 10  
+flag_minus db ? 
+flag_minus_1 db ? 
+flag_minus_2 db ?  
 
-.code 
-start:  
-    mov ax, @data 
-	mov es, ax 
-	mov ds, ax 
+print_num_plus proc near
+    push dx
+    push ax
 
-	lea dx, message1
-	call output 
+    cmp ax, 0
+    jnz not_zero
 
-	;input first number
-	call string_to_number
-    mov [num1], ax
-	mov NumBuffer, 0
+    putc '0'
+    jmp printed
 
-	lea dx, message2 
-	call output
-	
-	;input second number
-	call string_to_number
-	mov [num2], ax
-
-	lea dx, message3
-	call output
-
-	mov ax, num2
-	add ax, num1
-	jo overflow1
-	jmp alright1
-
-overflow1:
-	lea dx, overflow_msg
-	call output
-	jmp next1
-	
-alright1:	
-	;translating the result to string and output
-	call num_to_str
-	lea dx, [di+1]
-	call output
-	
-next1:
-	call new_line
-	lea dx, message4
-	call output
-
-	mov ax, num1
-	sub ax, num2
-	jo overflow2
-	jmp alright2
-
-overflow2:
-	lea dx, overflow_msg
-	call output
-	jmp next2
-
-alright2:
-	call number_to_string
-	lea dx, [di+1]
-	call output 
-	
-next2:
-	call new_line
-	lea dx, message5
-	call output
-
-	mov ax, num1
-	imul num2
-	jo overflow3
-	jmp alright3
-
-overflow3:
-	lea dx, overflow_msg
-	call output
-	jmp next3
-
-alright3:
-	call number_to_string
-	lea dx, [di+1]
-	call output 
-	
-next3:
-	call new_line
-	lea dx, message6
-	call output
-
-	cmp num2, 0
-	jne continuee
-	lea dx, div_by_zero
-	call output
-	call new_line
-	jmp skip
-
-continuee:
-	xor ax, ax
-	xor dx, dx
-	mov ax, num1
-	cmp ax, 0
-	jg pos
-	mov bx, -1
-	imul bx
-	idiv num2
-	imul bx
-	jo overflow4
-	jmp next
-
-pos:
-	idiv num2
-	jo overflow4
-	jmp next
-
-overflow4:
-	lea dx, overflow_msg
-	call output
-	jmp next4
-
-next:
-	call number_to_string
-	lea dx, [di+1]
-	call output
-	
-next4:
-	call new_line
-
-skip:	
-	mov dx, [num1] 
-	mov ax, [num2] 
-	and ax, dx 
-	call number_to_string 
-	lea dx, message7 
-	call output 
-	lea dx, [di+1] 
-	call output 
-	call new_line 
-
-	mov dx, [num1] 
-	mov ax, [num2] 
-	or ax, dx 
-	call number_to_string 
-	lea dx, message8 
-	call output 
-	lea dx, [di+1] 
-	call output 
-	call new_line 
-
-	mov dx, [num1] 
-	mov ax, [num2] 
-	xor ax, dx 
-	call number_to_string 
-	lea dx, message9 
-	call output 
-	lea dx, [di+1] 
-	call output 
-	call new_line 
-
-	mov ax, [num1] 
-	not ax 
-	call number_to_string 
-	lea dx, message10 
-	call output 
-	lea dx, [di+1] 
-	call output 
-	call new_line 
-
-	mov ax, [num2] 
-	not ax 
-	call number_to_string 
-	lea dx, message10 
-	call output 
-	lea dx, [di+1] 
-	call output
-
-	mov ax, 4C00h 
-	int 21h 
-
-output proc 
-	mov ah, 09h 
-	int 21h 
-	ret 
-endp output 
-
-new_line proc
-	mov dl, 10 
-	mov ah, 2 
-	int 21h
-	ret
-endp new_line
-
-input proc 
-	mov ah, 0Ah 
-	int 21h 
-
-	mov dl, 10 
-	mov ah, 2 
-	int 21h
-	ret 
-endp input 
-
-string_to_number proc
-
-again:
-
-	xor ax,ax
-    xor cx,cx
-   
-    mov al, 7
-   
-    mov [string],al
-    mov [string + 1], 0
-    lea dx, string
-    call input
-   
-    mov cl, [string + 1]
-    lea si, string
-    add si,2
-
-	xor ax,ax
-    xor bx,bx
-    xor dx,dx
-    mov dx,10 
+    not_zero:
+        cmp flag_minus_1,0
+        je firstpositive           
+        jmp firstnegative                    
+        
+    firstpositive:
+        cmp flag_minus_2,0
+        je positive
+        push ax 
+        mov ax,num2
+        neg ax
+        cmp num1,ax
+        ja gopositive
+        jmp makeneg
        
-NextSym:
-    xor ax,ax
-    lodsb
-    cmp bl,0
-    je checkMinus
-   
-checkSym:
+    gopositive:
+        pop ax
+        jmp positive
+       
+    firstnegative:
+        cmp flag_minus_2,0
+        je secondpositive
+        jmp makenegoutpop 
+       
+    secondpositive:
+        push ax
+        mov ax,num1
+        neg ax
+        cmp ax,num2
+        ja makeneg
+        jmp gopositive
+      
+    makeneg:
+        pop ax 
+        makenegoutpop:
+        neg ax
+        putc '-'
+        jmp positive
+                       
+    positive:
+        call print_num_ans
+    printed:
+        pop ax
+        pop dx
+        ret
+print_num_plus endp 
+
+print_num_minus proc near
+    push dx
+    push ax
+
+    cmp ax, 0
+    jnz not_zeromin
+
+    putc '0'
+    jmp printed
+
+    not_zeromin:  
+        cmp flag_minus_1,0
+        je firstpositivemin 
+        jmp firstnegativemin 
+        
+        firstpositivemin:
+        cmp flag_minus_2,0
+        je secondpositivemin 
+        jmp positivemin
+        
+    firstnegativemin:
+        cmp flag_minus_2,0
+        je makejustnegmin 
+        push ax
+        mov ax,num1
+        cmp ax,num2
+        ja makenegmin 
+        jmp makenegoutpopmin 
+        
+    secondpositivemin:
+        push ax
+        mov ax,num1
+        cmp ax,num2
+        ja makenegmin
+        jmp makenegoutpopmin
+       
+    makenegmin:
+        pop ax
+        jmp positivemin 
+        makenegoutpopmin:
+        pop ax
+        makejustnegmin:
+        neg ax
+        putc    '-'
+        jmp positivemin 
+                  
+    positivemin:
+
+        call print_num_ans
+    printedmin:
+        pop ax
+        pop dx
+        ret
+print_num_minus endp
+
+print_num_mul proc near
+    push dx
+    push ax
+
+    cmp ax, 0
+    jnz not_zeromul
+
+    putc '0'
+    jmp printed
+
+    not_zeromul:
+        push ax
+        xor ax,ax
+        mov al,flag_minus_1
+        xor al,flag_minus_2
+        cmp al,1
+        je makemulneg 
+        jmp positivemul 
+        
+        makemulneg: 
+        putc    '-'    
+    positivemul:
+        pop ax
+        call print_num_ans
+    printedmul:
+        call return_neg_nums       
+        pop ax
+        pop dx
+        ret
+print_num_mul endp
+
+print_num_div proc near
+    push dx
+    push ax
+
+    cmp ax, 0
+    jnz not_zerodiv
+
+    putc '0'
+    jmp printed
+
+    not_zerodiv:
+        push ax
+        xor ax,ax
+        mov al,flag_minus_1
+        xor al,flag_minus_2
+        cmp al,1
+        je makedivneg 
+        jmp positivediv 
+        
+    makedivneg: 
+        putc '-'
+             
+    positivediv:
+        pop ax
+        call print_num_ans 
+        
+    printeddiv:
+        call return_neg_nums
+        pop ax
+        pop dx
+        ret
+print_num_div endp 
+
+print_num_ans proc near
+    push ax
+    push bx
+    push cx
+    push dx
+       
+    mov cx, 1
+    mov bx, 10000      
+    cmp ax, 0
+    jz print_zero
+
+    begin_print:
+        cmp bx,0
+        jz end_print
+
+        cmp cx, 0
+        je calc
+        cmp ax, bx
+        jb skip 
+        
+    calc:
+        mov cx, 0   
+        mov dx, 0
+        div bx       
+        add al, 30h    
+        putc al
+        mov ax, dx  
+
+    skip:
+        push ax
+        mov dx, 0
+        mov ax, bx
+        div CS:ten  
+        mov bx, ax
+        pop ax
+
+        jmp begin_print
+        
+    print_zero:
+        putc '0'
+        
+    end_print:
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        ret
+print_num_ans endp
+
+check_minus proc near
+    cmp ax,32767
+    jna exit_check
+    putc '-'
+    neg ax
+    exit_check:
+        ret
+check_minus endp
+
+return_neg_nums proc near
+    cmp flag_minus_1,1
+    jz return_num1
+    jnz cont
+    cont:
+        cmp flag_minus_2,1
+        jz return_num2
+        jnz quit    
+    return_num1:
+        neg num1
+        jmp cont
+    return_num2:
+        neg num2
+    quit:
+        ret
+return_neg_nums endp
+
+Input proc near
+    push dx
+    push ax
+    push si
+    mov cx, 0
+    mov make_minus, 0
+
+    next_digit:
+        mov ah, 00h
+        int 16h
+        mov ah, 0Eh
+        int 10h
+
+        cmp al, '-'
+        je set_minus
+       
+        cmp al, 0Dh  
+        jne not_cr
+        jmp stop_input
+
+    not_cr:
+        cmp al, 8                   
+        jne backspace_checked
+        mov dx, 0                   
+        mov ax, cx                 
+        div CS:ten                  
+        mov cx, ax
+        putc ' '                     
+        putc 8                       
+        jmp next_digit
+        
+    backspace_checked:
+        cmp al, '0'
+        jae ok_AE_0
+        jmp remove_not_digit 
+        
+    ok_AE_0:        
+        cmp al, '9'
+        jbe ok_digit
+        
+    remove_not_digit:       
+        putc 8       
+        putc ' '     
+        putc 8            
+        jmp next_digit
+               
+    ok_digit:
+        push ax
+        mov ax, cx
+        mul CS:ten                  
+        mov cx, ax
+        pop ax
+
+        cmp dx, 0
+        jne too_big
+
+        sub al, 30h
+
+        mov ah, 0
+        mov dx, cx      
+        add cx, ax
+        jc too_big2    
+
+        jmp next_digit
+
+    set_minus:
+        mov CS:make_minus, 1
+        jmp next_digit
+
+    too_big2:
+        mov cx, dx      
+        mov dx, 0  
+            
+    too_big:
+        mov ax, cx
+        div CS:ten  
+        mov cx, ax
+        putc 8       
+        putc ' '     
+        putc 8             
+        jmp next_digit 
+        
+    stop_input:
+        cmp cx, 32767         
+        ja over               
+        cmp CS:make_minus, 0
+        je not_minus
+        neg CX
+        
+    not_minus:
+        pop si
+        pop ax
+        pop dx
+        ret
+make_minus db ?      
+Input endp    
+
+checkflags proc
+
+    checknum1:
+        cmp num1,32767
+        ja setflag1
+
+    checknum2:
+        cmp num2,32767
+        ja setflag2
+        jbe exitflag
          
-    cmp al,'0'
-    jl badNum
-    cmp al,'9'
-    jg badNum
+    setflag1: 
+        mov flag_minus_1,1 
+        jmp checknum2
+
+    setflag2: 
+        mov flag_minus_2,1 
+
+    exitflag:
+        ret
+checkflags endp
+
+    start: 
+        lea dx, msg1
+        mov ah, 09h   
+        int 21h  
+        call Input
+        mov num1, cx
+        jmp nextnumber
+    over:
+        lea dx, err1
+        mov ah, 09h   
+        int 21h
+        jmp exit 
+  
+    nextnumber:
+        lea dx, msg2
+        mov ah, 09h     
+        int 21h
+        call Input  
+        mov num2, cx
          
-    sub ax, '0'
-    mov bx, ax
-    xor ax, ax
-    mov ax, NumBuffer
-         
-    imul dx
-    jo badNum
-    cmp minus, 1
-    je doSub
-    add ax, bx
+        call checkflags        
 
-comeBack:
-    jo badNum
-    mov NumBuffer,ax
-    mov bx,1
-    mov dx,10
-    loop NextSym
+        lea dx, msg3
+        mov ah, 09h      
+        int 21h         
+        jmp plus 
+        
+    continue1:
+        lea dx, msg4
+        mov ah, 09h      
+        int 21h 
+        jmp minus
+    
+    continue2:
+        lea dx, msg5
+        mov ah, 09h      
+        int 21h 
+        jmp mult
+    
+    continue3:
+        lea dx, msg6
+        mov ah, 09h      
+        int 21h
+        jmp divv
+        
+    continue4:
+        lea dx, msg7
+        mov ah, 09h      
+        int 21h
+        mov dx, num1
+        mov ax, num2
+        and ax, dx
+        call check_minus
+        call print_num_ans
+        
+        lea dx, msg8
+        mov ah, 09h      
+        int 21h
+        mov dx, num1
+        mov ax, num2
+        or ax, dx
+        call check_minus
+        call print_num_ans
+        
+        lea dx, msg9
+        mov ah, 09h      
+        int 21h
+        mov dx, num1
+        mov ax, num2
+        xor ax, dx
+        call check_minus
+        call print_num_ans 
+        
+        lea dx, msg10
+        mov ah, 09h      
+        int 21h
+        mov ax, num1
+        neg ax
+        call check_minus
+        call print_num_ans 
+        
+        lea dx, msg11
+        mov ah, 09h      
+        int 21h
+        mov ax, num2
+        neg ax
+        call check_minus
+        call print_num_ans        
 
-    mov ax, NumBuffer
-    mov minus, 0
-    ret
-doSub:
-    sub ax, bx
-   	jmp comeBack
-     
-checkMinus:
-    inc bl
-    cmp al, '-'
+    exit:
+        mov ax,4C00h
+        int 21h
    
-    je SetMinus
-   
-    jmp checkSym
-                 
-SetMinus:
-    mov minus,1
-   	dec cx
-    cmp cx,0
-    je badNum
-    jmp NextSym
-   
-badNum:
-    clc ;clear carry flag
-    mov minus,0
-	lea dx, error_msg
-    call output
-	lea dx, try_again
-	call output
-	call new_line
-    mov NumBuffer, 0
-    jmp again                            
-endp string_to_number
+    plus:
+        mov ax, num1
+        add ax, num2 
+        call print_num_plus   
+        jmp continue1
 
+    minus:
+        mov ax, num1
+        sub ax, num2 
+        call print_num_minus    
+        jmp continue2
 
+    mult:
+        cmp flag_minus_1,1
+        je makenum1pos
+        jmp checknum2mul 
 
-number_to_string proc 
+    makenum1pos:
+        neg num1
 
-	mov NumBuffer, 1
-	cmp ax, 0
-	jge positive
-	mov bx, -1
-	imul bx
-	jmp negative
+    checknum2mul:
+        cmp flag_minus_2,1
+        je makenum2pos  
+        jmp gomul 
 
-positive:
-	mov NumBuffer, 0
-negative:
-	std 
-	lea di, string_end - 1 
+    makenum2pos:
+        neg num2
+  
+    gomul:
+        mov ax, num1
+        mul num2
+        jc overmul 
+        jmp printmul
 
-	mov cx,10 	
-repeat: 
-	xor dx,dx 	
-	idiv cx 	; Делим DX:AX на CX (10), 
-			; Получаем в AX частное, в DX остаток 
-	xchg ax,dx 	; Меняем их местами (нас интересует остаток) 
-	add al,'0' 	; Получаем в AL символ десятичной цифры 
-	stosb 		; И записываем ее в строку 
-	xchg ax,dx 	; Восстанавливаем AX (частное) 
-	or ax,ax	; Сравниваем AX с 0 
-jne repeat 
+    overmul:
+        lea dx, overflow
+        mov ah, 09h   
+        int 21h
+        jmp continue3 
 
-	cmp NumBuffer, 0
-	jg setSign
-	jmp eeend
-setSign:
-	xor ax, ax
-	mov al, '-'
-	stosb
+    printmul:
+        call print_num_mul    
+        jmp continue3
 
-eeend:
-	ret 
-endp number_to_string
+    divv: 
+        cmp flag_minus_1,1
+        je makenum1posdiv
+        jmp checknum2div 
 
-end start
+    makenum1posdiv:
+        neg num1
+
+    checknum2div:
+        cmp flag_minus_2,1
+        je makenum2posdiv  
+        jmp godiv 
+
+    makenum2posdiv:
+        neg num2
+  
+    godiv:
+        xor dx,dx
+        cmp num2,0
+        je overdiv
+        mov ax, num1
+        div num2  
+        jmp printdiv
+
+    overdiv:
+        lea dx, err2
+        mov ah, 09h   
+        int 21h
+        jmp continue4  
+
+    printdiv:
+        call print_num_div 
+        jmp continue4
+end start   
