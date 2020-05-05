@@ -14,28 +14,28 @@ org 100h
 jmp start
 
 overflow db  0Dh,0Ah,"Overflow$"
-msg1 db  0Dh,0Ah, "enter first number: $"
-msg2 db 0Dh,0Ah, "enter second number: $"
-msg3 db 0Dh,0Ah, "plus: $" 
-msg4 db 0Dh,0Ah, "minus: $"
-msg5 db 0Dh,0Ah, "mul: $"
-msg6 db 0Dh,0Ah, "div: $"
-msg7 db 0Dh,0Ah, "and: $"
-msg8 db 0Dh,0Ah, "or: $"
-msg9 db 0Dh,0Ah, "xor: $"
-msg10 db 0Dh,0Ah, "not1: $"
-msg11 db 0Dh,0Ah, "not2: $"
-err1 db  0Dh,0Ah,"invalid number$"
-err2 db  0Dh,0Ah,"division by zero is incorrect!$"
+message1 db  0Dh,0Ah, "enter first number: $"
+message2 db 0Dh,0Ah, "enter second number: $"
+message3 db 0Dh,0Ah, "plus: $" 
+message4 db 0Dh,0Ah, "minus: $"
+message5 db 0Dh,0Ah, "mul: $"
+message6 db 0Dh,0Ah, "div: $"
+message7 db 0Dh,0Ah, "and: $"
+message8 db 0Dh,0Ah, "or: $"
+message9 db 0Dh,0Ah, "xor: $"
+message10 db 0Dh,0Ah, "not1: $"
+message11 db 0Dh,0Ah, "not2: $"
+error1 db  0Dh,0Ah,"invalid number$"
+error2 db  0Dh,0Ah,"division by zero is incorrect!$"
 
-num1 dw ?
-num2 dw ? 
+number1 dw ?
+number2 dw ? 
 ten dw 10  
 flag_minus db ? 
 flag_minus_1 db ? 
 flag_minus_2 db ?  
 
-print_num_plus proc near
+print_number_plus proc near
     push dx
     push ax
 
@@ -54,9 +54,9 @@ print_num_plus proc near
         cmp flag_minus_2,0
         je positive
         push ax 
-        mov ax,num2
+        mov ax,number2
         neg ax
-        cmp num1,ax
+        cmp number1,ax
         ja gopositive
         jmp makeneg
        
@@ -71,9 +71,9 @@ print_num_plus proc near
        
     secondpositive:
         push ax
-        mov ax,num1
+        mov ax,number1
         neg ax
-        cmp ax,num2
+        cmp ax,number2
         ja makeneg
         jmp gopositive
       
@@ -85,14 +85,14 @@ print_num_plus proc near
         jmp positive
                        
     positive:
-        call print_num_ans
+        call print_number_ans
     printed:
         pop ax
         pop dx
         ret
-print_num_plus endp 
+print_number_plus endp 
 
-print_num_minus proc near
+print_number_minus proc near
     push dx
     push ax
 
@@ -116,15 +116,15 @@ print_num_minus proc near
         cmp flag_minus_2,0
         je makejustnegmin 
         push ax
-        mov ax,num1
-        cmp ax,num2
+        mov ax,number1
+        cmp ax,number2
         ja makenegmin 
         jmp makenegoutpopmin 
         
     secondpositivemin:
         push ax
-        mov ax,num1
-        cmp ax,num2
+        mov ax,number1
+        cmp ax,number2
         ja makenegmin
         jmp makenegoutpopmin
        
@@ -140,14 +140,14 @@ print_num_minus proc near
                   
     positivemin:
 
-        call print_num_ans
+        call print_number_ans
     printedmin:
         pop ax
         pop dx
         ret
-print_num_minus endp
+print_number_minus endp
 
-print_num_mul proc near
+print_number_mul proc near
     push dx
     push ax
 
@@ -170,15 +170,15 @@ print_num_mul proc near
         putc    '-'    
     positivemul:
         pop ax
-        call print_num_ans
+        call print_number_ans
     printedmul:
-        call return_neg_nums       
+        call return_neg_numbers       
         pop ax
         pop dx
         ret
-print_num_mul endp
+print_number_mul endp
 
-print_num_div proc near
+print_number_div proc near
     push dx
     push ax
 
@@ -202,16 +202,16 @@ print_num_div proc near
              
     positivediv:
         pop ax
-        call print_num_ans 
+        call print_number_ans 
         
     printeddiv:
-        call return_neg_nums
+        call return_neg_numbers
         pop ax
         pop dx
         ret
-print_num_div endp 
+print_number_div endp 
 
-print_num_ans proc near
+print_number_ans proc near
     push ax
     push bx
     push cx
@@ -258,7 +258,7 @@ print_num_ans proc near
         pop bx
         pop ax
         ret
-print_num_ans endp
+print_number_ans endp
 
 check_minus proc near
     cmp ax,32767
@@ -269,22 +269,22 @@ check_minus proc near
         ret
 check_minus endp
 
-return_neg_nums proc near
+return_neg_numbers proc near
     cmp flag_minus_1,1
-    jz return_num1
+    jz neg_number1
     jnz cont
     cont:
         cmp flag_minus_2,1
-        jz return_num2
+        jz neg_number2
         jnz quit    
-    return_num1:
-        neg num1
+    neg_number1:
+        neg number1
         jmp cont
-    return_num2:
-        neg num2
+    neg_number2:
+        neg number2
     quit:
         ret
-return_neg_nums endp
+return_neg_numbers endp
 
 Input proc near
     push dx
@@ -370,10 +370,18 @@ Input proc near
         
     stop_input:
         cmp cx, 32767         
-        ja over               
+        ja over     
         cmp CS:make_minus, 0
         je not_minus
         neg CX
+        jmp not_minus
+   
+    over:     
+        lea dx, error1
+        mov ah, 09h   
+        int 21h
+        xor cx, cx
+        jmp next_digit    
         
     not_minus:
         pop si
@@ -385,18 +393,18 @@ Input endp
 
 checkflags proc
 
-    checknum1:
-        cmp num1,32767
+    checknumber1:
+        cmp number1,32767
         ja setflag1
 
-    checknum2:
-        cmp num2,32767
+    checknumber2:
+        cmp number2,32767
         ja setflag2
         jbe exitflag
          
     setflag1: 
         mov flag_minus_1,1 
-        jmp checknum2
+        jmp checknumber2
 
     setflag2: 
         mov flag_minus_2,1 
@@ -406,129 +414,122 @@ checkflags proc
 checkflags endp
 
     start: 
-        lea dx, msg1
+        lea dx, message1
         mov ah, 09h   
         int 21h  
         call Input
-        mov num1, cx
-        jmp nextnumber
-    over:
-        lea dx, err1
-        mov ah, 09h   
-        int 21h
-        jmp exit 
-  
-    nextnumber:
-        lea dx, msg2
+        mov number1, cx
+
+        lea dx, message2
         mov ah, 09h     
         int 21h
         call Input  
-        mov num2, cx
+        mov number2, cx
          
         call checkflags        
 
-        lea dx, msg3
+        lea dx, message3
         mov ah, 09h      
         int 21h         
         jmp plus 
         
     continue1:
-        lea dx, msg4
+        lea dx, message4
         mov ah, 09h      
         int 21h 
         jmp minus
     
     continue2:
-        lea dx, msg5
+        lea dx, message5
         mov ah, 09h      
         int 21h 
         jmp mult
     
     continue3:
-        lea dx, msg6
+        lea dx, message6
         mov ah, 09h      
         int 21h
         jmp divv
         
     continue4:
-        lea dx, msg7
+        lea dx, message7
         mov ah, 09h      
         int 21h
-        mov dx, num1
-        mov ax, num2
+        mov dx, number1
+        mov ax, number2
         and ax, dx
         call check_minus
-        call print_num_ans
+        call print_number_ans
         
-        lea dx, msg8
+        lea dx, message8
         mov ah, 09h      
         int 21h
-        mov dx, num1
-        mov ax, num2
+        mov dx, number1
+        mov ax, number2
         or ax, dx
         call check_minus
-        call print_num_ans
+        call print_number_ans
         
-        lea dx, msg9
+        lea dx, message9
         mov ah, 09h      
         int 21h
-        mov dx, num1
-        mov ax, num2
+        mov dx, number1
+        mov ax, number2
         xor ax, dx
         call check_minus
-        call print_num_ans 
+        call print_number_ans 
         
-        lea dx, msg10
+        lea dx, message10
         mov ah, 09h      
         int 21h
-        mov ax, num1
+        mov ax, number1
         neg ax
         call check_minus
-        call print_num_ans 
+        call print_number_ans 
         
-        lea dx, msg11
+        lea dx, message11
         mov ah, 09h      
         int 21h
-        mov ax, num2
+        mov ax, number2
         neg ax
         call check_minus
-        call print_num_ans        
+        call print_number_ans        
 
     exit:
         mov ax,4C00h
         int 21h
    
     plus:
-        mov ax, num1
-        add ax, num2 
-        call print_num_plus   
+        mov ax, number1
+        add ax, number2 
+        call print_number_plus   
         jmp continue1
 
     minus:
-        mov ax, num1
-        sub ax, num2 
-        call print_num_minus    
+        mov ax, number1
+        sub ax, number2 
+        call print_number_minus    
         jmp continue2
 
     mult:
         cmp flag_minus_1,1
-        je makenum1pos
-        jmp checknum2mul 
+        je makenumber1pos
+        jmp checknumber2mul 
 
-    makenum1pos:
-        neg num1
+    makenumber1pos:
+        neg number1
 
-    checknum2mul:
+    checknumber2mul:
         cmp flag_minus_2,1
-        je makenum2pos  
+        je makenumber2pos  
         jmp gomul 
 
-    makenum2pos:
-        neg num2
+    makenumber2pos:
+        neg number2
   
     gomul:
-        mov ax, num1
-        mul num2
+        mov ax, number1
+        mul number2
         jc overmul 
         jmp printmul
 
@@ -539,40 +540,40 @@ checkflags endp
         jmp continue3 
 
     printmul:
-        call print_num_mul    
+        call print_number_mul    
         jmp continue3
 
     divv: 
         cmp flag_minus_1,1
-        je makenum1posdiv
-        jmp checknum2div 
+        je makenumber1posdiv
+        jmp checknumber2div 
 
-    makenum1posdiv:
-        neg num1
+    makenumber1posdiv:
+        neg number1
 
-    checknum2div:
+    checknumber2div:
         cmp flag_minus_2,1
-        je makenum2posdiv  
+        je makenumber2posdiv  
         jmp godiv 
 
-    makenum2posdiv:
-        neg num2
+    makenumber2posdiv:
+        neg number2
   
     godiv:
         xor dx,dx
-        cmp num2,0
+        cmp number2,0
         je overdiv
-        mov ax, num1
-        div num2  
+        mov ax, number1
+        div number2  
         jmp printdiv
 
     overdiv:
-        lea dx, err2
+        lea dx, error2
         mov ah, 09h   
         int 21h
         jmp continue4  
 
     printdiv:
-        call print_num_div 
+        call print_number_div 
         jmp continue4
 end start   
