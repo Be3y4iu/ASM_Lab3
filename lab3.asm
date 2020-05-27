@@ -383,6 +383,7 @@ Input proc near
         mov ah, 09h   
         int 21h
         xor cx, cx
+        mov make_minus, 0
         jmp next_digit    
         
     quit_input:
@@ -485,7 +486,7 @@ checkflags endp
         mov ah, 09h      
         int 21h
         mov ax, number1
-        neg ax
+        not ax
         call check_minus
         call print_number_ans 
         
@@ -493,7 +494,7 @@ checkflags endp
         mov ah, 09h      
         int 21h
         mov ax, number2
-        neg ax
+        not ax
         call check_minus
         call print_number_ans        
 
