@@ -58,16 +58,19 @@ sravn:
     je second
     cmp argc,3
     je third
-nextstep:
+nextstep:      
+    cmp cmd_line[si], 0
+    je third
     mov dl,cmd_line[si]
     mov buf[di],dl
     inc di
     inc si
-    xor dx,dx
-    mov dx,cmd_length
-    cmp si,dx
-    jne sravn
-    jmp third 
+;    xor dx,dx
+;    mov dx,cmd_length
+;    cmp si,dx
+;    jne sravn
+;    jmp third
+    jmp sravn 
 second:
     mov cx,di
     xor di,di
@@ -119,6 +122,8 @@ thirdcycle:
     pop ax
     inc di
     loop thirdcycle
+    cmp cmd_line[si], byte ptr 0
+    jne ErrorEnded2
     jmp EndMakeparams    
 ErrorEnded1:
     pop ax
@@ -157,7 +162,7 @@ start:
     mov ah,4Ah
     mov bx,((csize/16)+1)+((dsize/16)+1)+32
     int 21h
-    jc  ErrorExit0
+    jc  ErrorExit0 
     mov ax, @data
     mov es, ax
     
@@ -174,7 +179,7 @@ start:
     cmp cmd_length,0
     je  ErrorExit00
 
-    call Makeparams    
+    call Makeparams   
     
     push cx
     xor cx,cx
